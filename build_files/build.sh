@@ -5,14 +5,15 @@ set -ouex pipefail
 cp -avf "/ctx/system_files"/. /
 
 dnf5 -y install fuse
+dnf5 -y install rust cargo
+dnf5 -y install golang
+dnf5 -y install llvm
+dnf5 -y install python3-uv
+
 dnf5 -y install toolbox podman buildah flatpak rpm-ostree ostree
 dnf5 -y install @cosmic-desktop-environment
 dnf5 -y swap ffmpeg-free ffmpeg --allowerasing
-dnf5 -y install @multimedia --setopt="install_weak_deps=False" --exclude=PackageKit-gstreamer-plugin --skip-unavailable
-dnf5 -y install mesa-va-drivers-freeworld --skip-unavailable
-dnf5 -y swap mesa-vulkan-drivers{,-freeworld}
-dnf5 -y install mesa-va-drivers-freeworld.i686 --skip-unavailable
-dnf5 -y swap mesa-vulkan-drivers{,-freeworld}.i686
+dnf5 -y install @multimedia --setopt="install_weak_deps=False" --exclude=PackageKit-gstreamer-plugin
 
 dnf5 -y install dnf-plugins-core
 dnf5 -y config-manager addrepo --from-repofile=https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo
