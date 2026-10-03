@@ -21,6 +21,7 @@ dnf5 -y install dnf-plugins-core
 dnf5 -y config-manager addrepo --from-repofile=https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo
 dnf5 -y install brave-origin
 dnf5 -y install fastfetch micro zed gh git
+
 mkdir -p /usr/local/bin /usr/local/sbin
 dnf5 -y install wget
 wget https://github.com/amnezia-vpn/amnezia-client/releases/download/5.0.3.0/AmneziaVPN_5.0.3.0_linux_x64.run
@@ -29,6 +30,10 @@ export HOME=/tmp/amneziavpn
 mkdir -p "$HOME"
 QT_QPA_PLATFORM=offscreen ./AmneziaVPN_5.0.3.0_linux_x64.run --accept-licenses --default-answer --confirm-command install
 rm -rf AmneziaVPN_5.0.3.0_linux_x64.run "$HOME"
+
+dnf5 -y install curl
+curl -fsSL -o /etc/yum.repos.d/daeuniverse.repo https://daeuniverse.pages.dev/daeuniverse.repo
+dnf5 -y install v2raya
 
 dnf5 -y copr enable bieszczaders/kernel-cachyos-addons
 dnf5 -y swap zram-generator-defaults cachyos-settings
@@ -39,6 +44,7 @@ systemctl enable podman
 systemctl enable ananicy-cpp
 systemctl enable cosmic-greeter
 systemctl enable cpupower
+systemctl enable v2raya
 
 # desktop plus, pycharm, obs-studio, Pinta, Onlyoffice, Telegram, torbrowser, ventoy, lact, Discord, amneziavpn, v2raya, elyprismlauncher, Sober, Vinegar, Blender, Godot
 # bottles, hydra launcher, heroic games launcher, steam, Mangohud, gamescope, gear lever
