@@ -24,7 +24,10 @@ dnf5 -y install fastfetch micro zed gh git
 dnf5 -y install wget
 wget https://github.com/amnezia-vpn/amnezia-client/releases/download/5.0.3.0/AmneziaVPN_5.0.3.0_linux_x64.run
 chmod +x AmneziaVPN_5.0.3.0_linux_x64.run
+export HOME=/tmp/amneziavpn
+mkdir -p "$HOME"
 QT_QPA_PLATFORM=offscreen ./AmneziaVPN_5.0.3.0_linux_x64.run --accept-licenses --default-answer --confirm-command install
+rm -rf AmneziaVPN_5.0.3.0_linux_x64.run "$HOME"
 
 dnf5 -y copr enable bieszczaders/kernel-cachyos-addons
 dnf5 -y swap zram-generator-defaults cachyos-settings
