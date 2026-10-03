@@ -5,8 +5,6 @@ set -ouex pipefail
 cp -avf "/ctx/system_files"/. /
 
 dnf5 -y install --nogpgcheck --repofrompath 'terra,https://repos.fyralabs.com/terra$releasever' terra-release
-dnf5 -y install https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm
-dnf5 -y install https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
 
 dnf5 -y install fuse
 dnf5 -y install python3-uv
@@ -40,6 +38,8 @@ dnf5 -y install v2raya
 dnf5 -y copr enable bieszczaders/kernel-cachyos-addons
 dnf5 -y swap zram-generator-defaults cachyos-settings
 dnf5 -y install ananicy-cpp
+
+dnf5 -y remove firefox
 dnf5 -y autoremove
 
 systemctl enable podman
