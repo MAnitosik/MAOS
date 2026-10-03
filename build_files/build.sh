@@ -29,6 +29,8 @@ export HOME=/tmp/amneziavpn
 mkdir -p "$HOME"
 QT_QPA_PLATFORM=offscreen ./AmneziaVPN_5.0.3.0_linux_x64.run --accept-licenses --default-answer --confirm-command install
 rm -rf AmneziaVPN_5.0.3.0_linux_x64.run "$HOME"
+ln -sf /opt/AmneziaVPN/bin/AmneziaVPN /usr/bin/AmneziaVPN
+ln -sf /opt/AmneziaVPN/bin/AmneziaVPN /usr/sbin/AmneziaVPN
 
 dnf5 -y install curl
 curl -fsSL -o /etc/yum.repos.d/daeuniverse.repo https://daeuniverse.pages.dev/daeuniverse.repo
