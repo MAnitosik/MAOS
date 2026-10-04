@@ -39,13 +39,11 @@ chmod +x /usr/bin/v2raya_core
 
 dnf5 -y copr enable bieszczaders/kernel-cachyos-addons
 dnf5 -y swap zram-generator-defaults cachyos-settings
-dnf5 -y install ananicy-cpp
 
 dnf5 -y remove firefox
 dnf5 -y autoremove
 
 systemctl enable podman
-systemctl enable ananicy-cpp
 systemctl enable cosmic-greeter
 systemctl enable cpupower
 systemctl enable v2raya
