@@ -60,4 +60,5 @@ systemctl enable AmneziaVPN
 systemctl enable lactd
 systemctl enable bpftune
 
-# zapret, configure tuned and disable cpupower, add proper comments, integrate flatpaks better
+# zapret, configure tuned and disable cpupower, add proper comments, integrate flatpaks better, maybe delete github copilot in hosts
+# use https://copr.fedorainfracloud.org/coprs/cubewhy/jetbrains/ instead of flatpak pycharm
