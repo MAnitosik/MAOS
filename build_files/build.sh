@@ -34,7 +34,7 @@ ln -sf /opt/AmneziaVPN/bin/AmneziaVPN /usr/sbin/AmneziaVPN
 
 dnf5 -y install v2ray-geoip v2ray-domain-list-community xray
 dnf5 -y install v2raya
-ln -sf /usr/bin/xray /usr/bin/v2raya_core
+wget -O /usr/bin/v2raya_core https://github.com/v2rayA/v2rayA/releases/download/v2.5.9/v2raya_core_linux_x64_2.5.9
 
 dnf5 -y copr enable bieszczaders/kernel-cachyos-addons
 dnf5 -y swap zram-generator-defaults cachyos-settings
