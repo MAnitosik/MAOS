@@ -53,4 +53,4 @@ systemctl enable AmneziaVPN
 
 # desktop plus, pycharm, obs-studio, Pinta, Onlyoffice, Telegram, torbrowser, ventoy, lact, Discord, amneziavpn, v2raya, elyprismlauncher, Sober, Vinegar, Blender, Godot
 # bottles, hydra launcher, heroic games launcher, steam, Mangohud, gamescope, gear lever
-# zapret, waydroid, amd
+# zapret, waydroid, amd, MORE SOFTWARE
