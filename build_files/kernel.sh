@@ -27,3 +27,7 @@ dnf5 -y install "${packages[@]}"
 dnf5 versionlock add "${packages[@]}"
 
 rm -rf /boot/*
+
+rpm-ostree kargs --append=amd_pstate=passive
+rpm-ostree kargs --append=rcutree.enable_rcu_lazy=1
+rpm-ostree kargs --append=amdgpu.ppfeaturemask=0xffffffff

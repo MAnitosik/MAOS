@@ -14,14 +14,27 @@ dnf5 -y install ruby
 dnf5 -y install golang
 dnf5 -y install gcc clang
 
-dnf5 -y install toolbox podman buildah flatpak rpm-ostree ostree
+dnf5 -y install toolbox podman buildah flatpak
 dnf5 -y install @cosmic-desktop-environment
 
 dnf5 -y install dnf-plugins-core
 dnf5 -y config-manager addrepo --from-repofile=https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo
 dnf5 -y install brave-origin
 
-dnf5 -y install fastfetch micro zed gh git
+dnf5 -y copr enable karlisk/ventoy
+dnf5 -y install fastfetch micro zed gh git lact gnome-firmware ventoy
+flatpak install -y flathub org.desktop_plus.desktop-plus com.jetbrains.PyCharm-Professional org.onlyoffice.desktopeditors com.github.PintaProject.Pinta
+dnf5 -y install obs-studio
+
+dnf5 -y install bpftune
+
+dnf5 -y install steam faugus-launcher heroic-games-launcher protonplus
+flatpak install -y flathub it.mijorus.gearlever com.usebottles.bottles org.vinegarhq.Sober org.vinegarhq.Vinegar
+flatpak install -y https://elyprismlauncher.github.io/flatpak/elyprismlauncher.flatpakref
+dnf5 -y install discord-openasar
+dnf5 -y install "https://github.com/hydralauncher/hydra/releases/download/v4.1.6/hydralauncher-4.1.6.x86_64.rpm"
+
+flatpak install -y flathub org.telegram.desktop org.torproject.torbrowser-launcher
 
 wget https://github.com/amnezia-vpn/amnezia-client/releases/download/5.0.3.0/AmneziaVPN_5.0.3.0_linux_x64.run
 chmod +x AmneziaVPN_5.0.3.0_linux_x64.run
@@ -48,7 +61,7 @@ systemctl enable cosmic-greeter
 systemctl enable cpupower
 systemctl enable v2raya
 systemctl enable AmneziaVPN
+systemctl enable lactd
+systemctl enable bpftune
 
-# desktop plus, pycharm, obs-studio, Pinta, Onlyoffice, Telegram, torbrowser, ventoy, lact, Discord, amneziavpn, v2raya, elyprismlauncher, Sober, Vinegar, Blender, Godot
-# bottles, hydra launcher, heroic games launcher, steam, Mangohud, gamescope, gear lever
-# zapret, waydroid, amd, MORE SOFTWARE
+# zapret
