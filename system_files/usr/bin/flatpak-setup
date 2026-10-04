@@ -1,15 +1,17 @@
 #!/bin/bash
 
-flatpak install -y --no-deps --noninteractive flathub org.desktop_plus.desktop-plus
-flatpak install -y --no-deps --noninteractive flathub com.jetbrains.PyCharm-Professional
-flatpak install -y --no-deps --noninteractive flathub org.onlyoffice.desktopeditors
-flatpak install -y --no-deps --noninteractive flathub com.github.PintaProject.Pinta
+set -ouex pipefail
 
-flatpak install -y --no-deps --noninteractive flathub it.mijorus.gearlever
-flatpak install -y --no-deps --noninteractive flathub com.usebottles.bottles
-flatpak install -y --no-deps --noninteractive flathub org.vinegarhq.Sober
-flatpak install -y --no-deps --noninteractive flathub org.vinegarhq.Vinegar
-flatpak install -y --no-deps --noninteractive flathub https://elyprismlauncher.github.io/flatpak/elyprismlauncher.flatpakref
+flatpak install -y --noninteractive flathub org.desktop_plus.desktop-plus
+flatpak install -y --noninteractive flathub com.jetbrains.PyCharm-Professional
+flatpak install -y --noninteractive flathub org.onlyoffice.desktopeditors
+flatpak install -y --noninteractive flathub com.github.PintaProject.Pinta
 
-flatpak install -y --no-deps --noninteractive flathub org.telegram.desktop
-flatpak install -y --no-deps --noninteractive flathub org.torproject.torbrowser-launcher
+flatpak install -y --noninteractive flathub it.mijorus.gearlever
+flatpak install -y --noninteractive flathub com.usebottles.bottles
+flatpak install -y --noninteractive flathub org.vinegarhq.Sober
+flatpak install -y --noninteractive flathub org.vinegarhq.Vinegar
+flatpak install -y --noninteractive https://elyprismlauncher.github.io/flatpak/elyprismlauncher.flatpakref
+
+flatpak install -y --noninteractive flathub org.telegram.desktop
+flatpak install -y --noninteractive flathub org.torproject.torbrowser-launcher
