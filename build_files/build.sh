@@ -23,18 +23,25 @@ dnf5 -y install brave-origin
 
 dnf5 -y copr enable karlisk/ventoy
 dnf5 -y install fastfetch micro zed gh git lact gnome-firmware ventoy
-flatpak install -y flathub org.desktop_plus.desktop-plus com.jetbrains.PyCharm-Professional org.onlyoffice.desktopeditors com.github.PintaProject.Pinta
+flatpak install -y flathub org.desktop_plus.desktop-plus
+flatpak install -y flathub com.jetbrains.PyCharm-Professional
+flatpak install -y flathub org.onlyoffice.desktopeditors
+flatpak install -y flathub com.github.PintaProject.Pinta
 dnf5 -y install obs-studio
 
 dnf5 -y install bpftune
 
 dnf5 -y install steam faugus-launcher heroic-games-launcher protonplus
-flatpak install -y flathub it.mijorus.gearlever com.usebottles.bottles org.vinegarhq.Sober org.vinegarhq.Vinegar
-flatpak install -y https://elyprismlauncher.github.io/flatpak/elyprismlauncher.flatpakref
+flatpak install -y flathub it.mijorus.gearlever
+flatpak install -y flathub com.usebottles.bottles
+flatpak install -y flathub org.vinegarhq.Sober
+flatpak install -y flathub org.vinegarhq.Vinegar
+flatpak install -y flathub https://elyprismlauncher.github.io/flatpak/elyprismlauncher.flatpakref
 dnf5 -y install discord-openasar
 dnf5 -y install "https://github.com/hydralauncher/hydra/releases/download/v4.1.6/hydralauncher-4.1.6.x86_64.rpm"
 
-flatpak install -y flathub org.telegram.desktop org.torproject.torbrowser-launcher
+flatpak install -y flathub org.telegram.desktop
+flatpak install -y flathub org.torproject.torbrowser-launcher
 
 wget https://github.com/amnezia-vpn/amnezia-client/releases/download/5.0.3.0/AmneziaVPN_5.0.3.0_linux_x64.run
 chmod +x AmneziaVPN_5.0.3.0_linux_x64.run
