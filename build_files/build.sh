@@ -71,4 +71,4 @@ systemctl enable AmneziaVPN
 systemctl enable lactd
 systemctl enable bpftune
 
-# zapret
+# zapret, configure tuned and disable cpupower
