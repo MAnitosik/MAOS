@@ -69,11 +69,6 @@ ff02::2         ip6-allrouters
 193.233.112.68 gew1-dealer.spotify.com
 193.233.112.68 www-growth.scdn.co
 
-# GitHub Copilot
-103.137.248.179 api.github.com
-193.233.112.68 api.individual.githubcopilot.com
-193.233.112.68 proxy.individual.githubcopilot.com
-
 # JetBrains
 193.233.112.68 datalore.jetbrains.com
 193.233.112.68 plugins.jetbrains.com
