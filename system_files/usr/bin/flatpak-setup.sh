@@ -9,7 +9,6 @@ fi
 
 tldr --update
 
-flatpak install -y --system --noninteractive flathub org.desktop_plus.desktop-plus
 flatpak install -y --system --noninteractive flathub org.onlyoffice.desktopeditors
 flatpak install -y --system --noninteractive flathub io.github.wartybix.Constrict
 flatpak install -y --system --noninteractive flathub com.github.huluti.Curtail

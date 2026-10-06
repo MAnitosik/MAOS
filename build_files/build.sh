@@ -24,16 +24,13 @@ dnf5 -y install torbrowser-launcher
 
 dnf5 -y copr enable karlisk/ventoy
 dnf5 -y copr enable cubewhy/jetbrains
-dnf5 -y install tealdeer fastfetch micro zed jetbrains-pycharm gh git lact gnome-firmware ventoy obs-studio
+dnf5 -y install tealdeer fastfetch micro zed jetbrains-pycharm gh git desktop-plus-bin lact gnome-firmware ventoy obs-studio
 
 dnf5 -y install bpftune
 
 # dnf5 -y install steam faugus-launcher heroic-games-launcher protonplus
 # dnf5 -y install "https://github.com/hydralauncher/hydra/releases/download/v4.1.6/hydralauncher-4.1.6.x86_64.rpm"
 dnf5 -y install discord-openasar
-
-dnf5 -y install zapret2
-wget -O /opt/zapret2/config https://raw.githubusercontent.com/MAnitosik/MAOS/refs/heads/main/config
 
 wget https://github.com/amnezia-vpn/amnezia-client/releases/download/5.0.3.0/AmneziaVPN_5.0.3.0_linux_x64.run
 chmod +x AmneziaVPN_5.0.3.0_linux_x64.run
@@ -59,9 +56,9 @@ systemctl enable podman
 systemctl enable cosmic-greeter
 systemctl enable lactd
 systemctl enable bpftune
-systemctl enable zapret2
-systemctl enable zapret2-list-update
 systemctl enable AmneziaVPN
 systemctl enable v2raya
 
 # zapret, add proper comments to everything, integrate flatpaks better, fix ventoy
+# https://github.com/terrapkg/packages/tree/frawhide/anda/apps/desktop-plus-bin - use it instead of flatpak
+# rename flatpak-setup.sh to flatpak-setup
