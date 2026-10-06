@@ -30,7 +30,6 @@ dnf5 -y install bpftune
 
 # dnf5 -y install steam faugus-launcher heroic-games-launcher protonplus
 # dnf5 -y install "https://github.com/hydralauncher/hydra/releases/download/v4.1.6/hydralauncher-4.1.6.x86_64.rpm"
-
 dnf5 -y install discord-openasar
 
 wget https://github.com/amnezia-vpn/amnezia-client/releases/download/5.0.3.0/AmneziaVPN_5.0.3.0_linux_x64.run
@@ -61,4 +60,4 @@ systemctl enable AmneziaVPN
 systemctl enable lactd
 systemctl enable bpftune
 
-# zapret, configure tuned and disable cpupower, add proper comments, integrate flatpaks better, I am lazy
+# zapret, configure tuned and disable cpupower, add proper comments, integrate flatpaks better, fix ventoy
