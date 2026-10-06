@@ -46,11 +46,11 @@ dnf5 -y install v2raya
 wget -O /usr/bin/v2raya_core https://github.com/v2rayA/v2rayA/releases/download/v2.5.9/v2raya_core_linux_x64_2.5.9
 chmod +x /usr/bin/v2raya_core
 
+dnf5 -y copr enable bieszczaders/kernel-cachyos-lto
 dnf5 -y copr enable bieszczaders/kernel-cachyos-addons
 dnf5 -y swap zram-generator-defaults cachyos-settings
 
 dnf5 -y remove firefox
-dnf5 -y autoremove
 
 systemctl enable podman
 systemctl enable cosmic-greeter

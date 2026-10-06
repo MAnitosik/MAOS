@@ -2,8 +2,6 @@ set -ouex pipefail
 
 shopt -s nullglob
 
-dnf5 -y copr enable bieszczaders/kernel-cachyos-lto
-
 packages=(
   kernel-cachyos-lto
   kernel-cachyos-lto-core
