@@ -2,6 +2,11 @@
 
 set -ouex pipefail
 
+if [ "$(id -u)" -ne 0 ]; then
+    echo "Error: This script must be run with root privileges."
+    exit 1
+fi
+
 flatpak install -y --system --noninteractive flathub org.desktop_plus.desktop-plus
 flatpak install -y --system --noninteractive flathub org.onlyoffice.desktopeditors
 flatpak install -y --system --noninteractive flathub io.github.wartybix.Constrict

@@ -54,10 +54,9 @@ dnf5 -y autoremove
 
 systemctl enable podman
 systemctl enable cosmic-greeter
-systemctl enable cpupower
 systemctl enable v2raya
 systemctl enable AmneziaVPN
 systemctl enable lactd
 systemctl enable bpftune
 
-# zapret, configure tuned and disable cpupower, add proper comments to everything, integrate flatpaks better, fix ventoy
+# zapret, add proper comments to everything, integrate flatpaks better, fix ventoy
