@@ -1,3 +1,9 @@
+# NOTE: the root filesystem type is NOT configured here on purpose.
+# bootc-image-builder's TOML config has no "rootfs" key (setting one fails with
+# "unknown keys found: [rootfs]"); it must be passed as the "--rootfs" CLI
+# option, which this repo does through the action's dedicated `rootfs` input.
+# See disk_config/README.md for the full explanation.
+
 [[customizations.filesystem]]
 mountpoint = "/"
 minsize = "20 GiB"
