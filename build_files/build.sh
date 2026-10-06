@@ -60,4 +60,4 @@ systemctl enable AmneziaVPN
 systemctl enable lactd
 systemctl enable bpftune
 
-# zapret, configure tuned and disable cpupower, add proper comments, integrate flatpaks better, fix ventoy
+# zapret, configure tuned and disable cpupower, add proper comments to everything, integrate flatpaks better, fix ventoy
