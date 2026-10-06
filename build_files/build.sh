@@ -4,8 +4,7 @@ set -ouex pipefail
 
 cp -avf "/ctx/system_files"/. /
 
-curl -fsSL https://github.com/terrapkg/subatomic-repos/raw/main/terra.repo | tee /etc/yum.repos.d/terra.repo
-rpm-ostree -y install terra-release
+dnf5 -y config-manager addrepo --from-repofile=https://github.com/terrapkg/subatomic-repos/raw/main/terra.repo
 
 dnf5 -y install fuse
 dnf5 -y install python3-uv
