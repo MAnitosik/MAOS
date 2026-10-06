@@ -7,6 +7,8 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
+tldr --update
+
 flatpak install -y --system --noninteractive flathub org.desktop_plus.desktop-plus
 flatpak install -y --system --noninteractive flathub org.onlyoffice.desktopeditors
 flatpak install -y --system --noninteractive flathub io.github.wartybix.Constrict
