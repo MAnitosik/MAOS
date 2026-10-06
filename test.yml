@@ -1,0 +1,375 @@
+name: Build disk image
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 */3 * *'
+
+env:
+  IMAGE_NAME: "${{ github.event.repository.name }}"
+  IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
+
+jobs:
+  build_release:
+
+    name: Build and upload disk image
+
+    strategy:
+      fail-fast: false
+      matrix:
+        flavor: ["", "nvidia"]
+
+    runs-on: ubuntu-24.04
+
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+
+    timeout-minutes: 60
+
+    steps:
+      - name: Set tag prefix
+        run: |
+          if [ "${{ github.ref_name }}" != "main" ]; then
+            echo "TAG_PREFIX=${{ github.ref_name }}." >> $GITHUB_ENV
+            echo "DEFAULT_TAG=${{ github.ref_name }}.latest" >> $GITHUB_ENV
+          else
+            echo "TAG_PREFIX=" >> $GITHUB_ENV
+            echo "DEFAULT_TAG=latest" >> $GITHUB_ENV
+          fi
+
+      - name: Change image name depending on build flavor
+        env:
+          BUILD_FLAVOR: ${{ matrix.flavor }}
+        run: |
+          if [ "${BUILD_FLAVOR}" != "" ] ; then
+            echo "IMAGE_NAME=${IMAGE_NAME}-${{ matrix.flavor }}" >> $GITHUB_ENV
+          fi
+
+      - name: Lower case image variables
+        run: |
+          echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
+          echo "IMAGE_NAME=${IMAGE_NAME,,}" >> ${GITHUB_ENV}
+
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq zstd curl uuid-runtime
+
+      - name: Mount BTRFS for podman storage
+        id: container-storage-action
+        uses: ublue-os/container-storage-action@911baca08baf30c8654933e9e9723cb399892140
+        continue-on-error: true
+        with:
+          target-dir: /var/lib/containers
+          mount-opts: compress-force=zstd:2
+
+      - name: Build ISO
+        id: build-iso
+        uses: osbuild/bootc-image-builder-action@main
+        with:
+          builder-image: ghcr.io/zena-linux/bootc-image-builder:latest
+          config-file: ./iso/${{ env.IMAGE_NAME }}.toml
+          image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
+          types: anaconda-iso
+          rootfs: btrfs
+          additional-args: --use-librepo=True
+
+      - name: Find ISO
+        id: find_iso
+        run: |
+          ISO_FILE=$(find "${{ steps.build-iso.outputs.output-directory }}" -name "*.iso" | head -n1)
+
+          echo "ISO_FILE=$ISO_FILE" >> $GITHUB_OUTPUT
+
+      - name: Prepare ISO
+        id: prepare_iso
+        run: |
+          mkdir -p ./release
+
+          FLAVOR="${{ matrix.flavor }}"
+
+          if [ -z "$FLAVOR" ]; then
+            FLAVOR="default"
+          fi
+
+          ISO_NAME="${IMAGE_NAME}.iso"
+
+          cp \
+            "${{ steps.find_iso.outputs.ISO_FILE }}" \
+            "./release/${ISO_NAME}"
+
+          echo "ISO_NAME=$ISO_NAME" >> $GITHUB_OUTPUT
+          echo "ISO_FILE=./release/${ISO_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Compress ISO
+        id: compress_iso
+        run: |
+          zstd -19 -T0 \
+            "${{ steps.prepare_iso.outputs.ISO_FILE }}" \
+            -o "${{ steps.prepare_iso.outputs.ISO_FILE }}.zst"
+
+          echo "FILE=${{ steps.prepare_iso.outputs.ISO_FILE }}.zst" >> $GITHUB_OUTPUT
+
+      - name: Upload to storage.to
+        id: upload_storage_to
+        run: |
+          set -Eeuo pipefail
+
+          FILE="${{ steps.compress_iso.outputs.FILE }}"
+          SIZE=$(stat -c%s "$FILE")
+          MIME="application/zstd"
+
+          VISITOR_TOKEN=$(uuidgen)
+
+          echo "Initializing upload..."
+
+          INIT_RESPONSE=$(
+            curl -fsSL \
+              -X POST \
+              https://storage.to/api/upload/init \
+              -H "Content-Type: application/json" \
+              -H "X-Visitor-Token: $VISITOR_TOKEN" \
+              -d "{
+                \"filename\":\"$(basename "$FILE")\",
+                \"content_type\":\"$MIME\",
+                \"size\":$SIZE
+              }"
+          )
+
+          echo "$INIT_RESPONSE"
+
+          TYPE=$(echo "$INIT_RESPONSE" | jq -r '.type')
+
+          if [ "$TYPE" = "single" ]; then
+
+            UPLOAD_URL=$(echo "$INIT_RESPONSE" | jq -r '.upload_url')
+            R2_KEY=$(echo "$INIT_RESPONSE" | jq -r '.r2_key')
+
+            curl \
+              --fail \
+              --retry 10 \
+              --retry-all-errors \
+              --retry-delay 5 \
+              --upload-file "$FILE" \
+              "$UPLOAD_URL"
+
+          elif [ "$TYPE" = "multipart" ]; then
+
+            echo "Multipart upload detected"
+
+            UPLOAD_ID=$(echo "$INIT_RESPONSE" | jq -r '.upload_id')
+            R2_KEY=$(echo "$INIT_RESPONSE" | jq -r '.r2_key')
+            PART_SIZE=$(echo "$INIT_RESPONSE" | jq -r '.part_size')
+            TOTAL_PARTS=$(echo "$INIT_RESPONSE" | jq -r '.total_parts')
+
+            mkdir -p ./parts
+            rm -f ./parts/*
+
+            split \
+              -b "$PART_SIZE" \
+              -d \
+              -a 5 \
+              "$FILE" \
+              ./parts/part_
+
+            ETAGS_FILE=$(mktemp)
+
+            for i in $(seq 1 "$TOTAL_PARTS"); do
+
+              PART_FILE=$(printf "./parts/part_%05d" $((i - 1)))
+
+              echo "Uploading part $i/$TOTAL_PARTS"
+
+              URL=$(echo "$INIT_RESPONSE" | jq -r ".initial_urls[\"$i\"]")
+
+              if [ "$URL" = "null" ] || [ -z "$URL" ]; then
+
+                PART_RESPONSE=$(
+                  curl -fsSL \
+                    -X POST \
+                    https://storage.to/api/upload/parts \
+                    -H "Content-Type: application/json" \
+                    -d "{
+                      \"upload_id\":\"$UPLOAD_ID\",
+                      \"part_numbers\":[$i]
+                    }"
+                )
+
+                URL=$(echo "$PART_RESPONSE" | jq -r '.part_urls[0].url')
+              fi
+
+              HEADERS=$(mktemp)
+
+              curl \
+                --fail \
+                --retry 10 \
+                --retry-all-errors \
+                --retry-delay 5 \
+                -D "$HEADERS" \
+                --upload-file "$PART_FILE" \
+                "$URL"
+
+              ETAG=$(grep -i ETag "$HEADERS" | cut -d' ' -f2- | tr -d '\r')
+
+              echo "{\"partNumber\":$i,\"etag\":$ETAG}" >> "$ETAGS_FILE"
+
+              rm -f "$HEADERS"
+            done
+
+            PARTS_JSON=$(jq -s '.' "$ETAGS_FILE")
+
+            echo "Completing multipart upload..."
+
+            curl -fsSL \
+              -X POST \
+              https://storage.to/api/upload/complete-multipart \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"upload_id\":\"$UPLOAD_ID\",
+                \"parts\":$PARTS_JSON
+              }"
+
+          else
+            echo "Unknown upload type: $TYPE"
+            exit 1
+          fi
+
+          echo "Confirming upload..."
+
+          CONFIRM_RESPONSE=$(
+            curl -fsSL \
+              -X POST \
+              https://storage.to/api/upload/confirm \
+              -H "Content-Type: application/json" \
+              -H "X-Visitor-Token: $VISITOR_TOKEN" \
+              -d "{
+                \"filename\":\"$(basename "$FILE")\",
+                \"content_type\":\"$MIME\",
+                \"size\":$SIZE,
+                \"r2_key\":\"$R2_KEY\"
+              }"
+          )
+
+          echo "$CONFIRM_RESPONSE"
+
+          URL=$(echo "$CONFIRM_RESPONSE" | jq -r '.file.url')
+
+          echo ""
+          echo "Download URL:"
+          echo "$URL"
+
+          echo "URL=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Generate release metadata
+        run: |
+          mkdir -p ./metadata
+
+          FLAVOR="${{ matrix.flavor }}"
+
+          if [ -z "$FLAVOR" ]; then
+            FLAVOR="default"
+          fi
+
+          cat > "./metadata/${FLAVOR}.json" <<EOF
+          {
+            "flavor": "$FLAVOR",
+            "image": "${{ env.IMAGE_NAME }}",
+            "filename": "${{ steps.prepare_iso.outputs.ISO_NAME }}.zst",
+            "download_url": "${{ steps.upload_storage_to.outputs.URL }}"
+          }
+          EOF
+
+      - name: Upload metadata artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: metadata-${{ matrix.flavor || 'default' }}
+          path: ./metadata/*.json
+
+  publish_release:
+
+    name: Publish metadata
+    needs: build_release
+    if: github.ref_name == 'main'
+
+    runs-on: ubuntu-24.04
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Install jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Download metadata artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: ./downloads
+
+      - name: Merge metadata
+        run: |
+          mkdir -p ./metadata
+
+          find ./downloads -name "*.json" -print0 \
+            | xargs -0 jq -s '
+                reduce .[] as $item ({}; .[$item.flavor] = {
+                  image: $item.image,
+                  download_url: $item.download_url
+                })
+              ' \
+            > ./metadata/releases.json
+
+          cat ./metadata/releases.json
+
+      - name: Publish metadata branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -Eeuo pipefail
+
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git clone \
+            --depth 1 \
+            --branch metadata \
+            "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            metadata-branch \
+            || true
+
+          if [ ! -d metadata-branch/.git ]; then
+            mkdir -p metadata-branch
+            cd metadata-branch
+
+            git init
+            git checkout -b metadata
+            cd ..
+          fi
+
+          find metadata-branch \
+            -mindepth 1 \
+            -maxdepth 1 \
+            ! -name ".git" \
+            -exec rm -rf {} +
+
+          cp -r metadata/. metadata-branch/
+          cd metadata-branch
+
+          git add --all
+          if git diff --cached --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+
+          git commit -m "Update metadata"
+
+          git push \
+            --force \
+            "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            metadata
