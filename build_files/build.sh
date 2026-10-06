@@ -54,9 +54,9 @@ dnf5 -y remove firefox
 
 systemctl enable podman
 systemctl enable cosmic-greeter
-systemctl enable v2raya
-systemctl enable AmneziaVPN
 systemctl enable lactd
 systemctl enable bpftune
+systemctl enable AmneziaVPN
+systemctl enable v2raya
 
 # zapret, add proper comments to everything, integrate flatpaks better, fix ventoy
