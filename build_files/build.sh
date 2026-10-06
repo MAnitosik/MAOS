@@ -60,5 +60,3 @@ systemctl enable AmneziaVPN
 systemctl enable v2raya
 
 # zapret, add proper comments to everything, integrate flatpaks better, fix ventoy
-# https://github.com/terrapkg/packages/tree/frawhide/anda/apps/desktop-plus-bin - use it instead of flatpak
-# rename flatpak-setup.sh to flatpak-setup
