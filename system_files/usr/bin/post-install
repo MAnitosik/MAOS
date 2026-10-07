@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -ouex pipefail
+
+if [ "$(id -u)" -ne 0 ]; then
+    echo "Error: This script must be run with root privileges."
+    exit 1
+fi
+
+tldr --update
+
+wget -O /etc/hosts https://raw.githubusercontent.com/MAnitosik/MAOS/refs/heads/main/system_files/etc/hosts
+
+wget -O /etc/rpm-ostreed.conf https://raw.githubusercontent.com/MAnitosik/MAOS/refs/heads/main/system_files/etc/rpm-ostreed.conf
