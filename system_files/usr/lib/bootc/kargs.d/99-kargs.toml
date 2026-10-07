@@ -1,2 +1,0 @@
-kargs = ["amd_pstate=passive", "rcutree.enable_rcu_lazy=1", "amdgpu.ppfeaturemask=0xffffffff"]
-match-architectures = ["x86_64"]
