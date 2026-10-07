@@ -91,8 +91,6 @@ jobs:
             sudo apparmor_parser -r /etc/apparmor.d/bwrap-userns-restrict
             echo "AppArmor override installed: bwrap children stay in 'bwrap (enforce)'"
           else
-            # Could not confirm the loaded state; on a disposable runner the safe
-            # fallback is to drop the profile entirely (bwrap then runs unconfined).
             sudo apparmor_parser -R /etc/apparmor.d/bwrap-userns-restrict || true
             echo "bwrap-userns-restrict unloaded"
           fi
