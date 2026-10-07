@@ -24,4 +24,6 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
     /ctx/initramfs.sh
 
+COPY system_files/etc/hosts /etc/hosts
+
 RUN bootc container lint
