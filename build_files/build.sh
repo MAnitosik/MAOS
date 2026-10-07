@@ -59,5 +59,4 @@ systemctl enable bpftune
 systemctl enable AmneziaVPN
 systemctl enable v2raya
 
-# zapret2, add proper comments to everything, integrate flatpaks better, fix ventoy
-# fix hosts and rpm-ostreed config files
+# zapret2, add proper comments to everything, fix ventoy
