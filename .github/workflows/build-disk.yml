@@ -77,25 +77,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Keep bwrap children in the parent AppArmor profile (Ubuntu 26.04)
-        run: |
-          set -euxo pipefail
-          if ! sudo test -r /etc/apparmor.d/bwrap-userns-restrict; then
-            echo "bwrap-userns-restrict not present on this runner, nothing to do"
-            exit 0
-          fi
-          if sudo test -r /sys/kernel/security/apparmor/profiles \
-             && sudo grep -qx 'bwrap (enforce)' /sys/kernel/security/apparmor/profiles; then
-            printf '%s\n' 'priority=100 allow file rwlkm /**,' 'priority=100 allow ix /**,' | sudo tee /etc/apparmor.d/local/bwrap-userns-restrict >/dev/null
-            sudo apparmor_parser -Q /etc/apparmor.d/bwrap-userns-restrict
-            sudo apparmor_parser -r /etc/apparmor.d/bwrap-userns-restrict
-            echo "AppArmor override installed: bwrap children stay in 'bwrap (enforce)'"
-          else
-            sudo apparmor_parser -R /etc/apparmor.d/bwrap-userns-restrict || true
-            echo "bwrap-userns-restrict unloaded"
-          fi
-          sudo aa-status 2>/dev/null | grep -i bwrap || true
-
       - name: Build disk images
         id: build
         uses: osbuild/bootc-image-builder-action@8661cd3832544ad68c12dcde8681b13ab0f56a8d # main
@@ -105,7 +86,6 @@ jobs:
           image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
           chown: ${{ env.USER_UID }}:${{ env.USER_GID }}
           types: ${{ matrix.disk-type }}
-          rootfs: ext4
           additional-args: --use-librepo=True
 
       - name: Upload disk images and Checksum to Job Artifacts
