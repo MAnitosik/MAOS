@@ -61,13 +61,6 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Mount BTRFS for container storage
-        uses: ublue-os/container-storage-action@dc1f4c8f17b672069e921f001132f7cf98a423a6 # main
-        continue-on-error: true
-        with:
-          target-dir: /var/lib/containers
-          mount-opts: compress-force=zstd:2
-
       - name: Build disk image
         id: build
         uses: osbuild/bootc-image-builder-action@028e4d28330efe546229eb9cb52aee78174d2347 # main
@@ -77,6 +70,8 @@ jobs:
           image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
           chown: ${{ env.USER_UID }}:${{ env.USER_GID }}
           types: anaconda-iso
+          # Required: the image declares no default root filesystem. Matches the Justfile's _build-bib (--rootfs=btrfs).
+          rootfs: btrfs
           additional-args: --use-librepo=True
 
       - name: Upload to job artifacts
