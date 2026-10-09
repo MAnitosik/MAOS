@@ -32,7 +32,9 @@ concurrency:
 jobs:
   build:
     name: Build disk image
-    runs-on: ubuntu-26.04
+    # 24.04 is the runner the builder action's own anaconda-iso CI uses. On 26.04 (podman 5.7, kernel 7.0),
+    # osbuild's build sandbox was denied chown and mount calls during the RPM stage.
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
 
     permissions:
