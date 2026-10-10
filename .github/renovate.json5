@@ -17,5 +17,25 @@
       "matchDepTypes": ["container"],
       "matchFileNames": [".github/workflows/**.yaml", ".github/workflows/**.yml"],
     },
+  ],
+
+  // Versions that the workflows pass to actions as inputs. Renovate cannot see these otherwise.
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "just version installed by extractions/setup-just",
+      "fileMatch": ["^\\.github/workflows/[^/]+\\.ya?ml$"],
+      "matchStrings": ["just-version:\\s*'(?<currentValue>\\d+\\.\\d+\\.\\d+)'"],
+      "depNameTemplate": "casey/just",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "description": "cosign version installed by sigstore/cosign-installer",
+      "fileMatch": ["^\\.github/workflows/[^/]+\\.ya?ml$"],
+      "matchStrings": ["cosign-release:\\s*'(?<currentValue>v\\d+\\.\\d+\\.\\d+)'"],
+      "depNameTemplate": "sigstore/cosign",
+      "datasourceTemplate": "github-releases"
+    }
   ]
 }

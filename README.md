@@ -132,29 +132,22 @@ The [build.sh](./build_files/build.sh) file is called from your Containerfile. I
 
 ## build.yml
 
-The [build.yml](./.github/workflows/build.yml) Github Actions workflow creates your custom OCI image and publishes it to the Github Container Registry (GHCR). By default, the image name will match the Github repository name.
+The [build.yml](./.github/workflows/build.yml) Github Actions workflow creates your custom OCI image and publishes it to the Github Container Registry (GHCR). The image name and default tag come from `IMAGE_NAME` and `DEFAULT_TAG` in `image-template.env`.
 
 # Building Disk Images
 
-This template provides an out of the box workflow for creating disk images (ISO, qcow, raw) for your custom OCI image which can be used to directly install onto your machines.
+This template provides an out of the box workflow for creating an Anaconda ISO installer for your custom OCI image. The ISO can be used to install directly onto your machines. The workflow only builds ISO images. To build QCOW2 or raw images locally, use the `just build-qcow2` and `just build-raw` recipes described below.
 
-This template provides a way to upload the disk images that is generated from the workflow to a S3 bucket. The disk images will also be available as an artifact from the job, if you wish to use an alternate provider. To upload to S3 we use [rclone](https://rclone.org/) which is able to use [many S3 providers](https://rclone.org/s3/).
+The workflow uploads the ISO as a workflow artifact named `anaconda-iso`, together with a `SHA256SUMS` file for verifying the download. Artifacts are kept for the retention period set in your repository's settings, which is 90 days by default.
 
 ## Setting Up ISO Builds
 
-The [build-disk.yml](./.github/workflows/build-disk.yml) Github Actions workflow creates a disk image from your OCI image by utilizing the [bootc-image-builder](https://osbuild.org/docs/bootc/). In order to use this workflow you must complete the following steps:
+The [build-disk.yml](./.github/workflows/build-disk.yml) Github Actions workflow creates an ISO from your OCI image by utilizing the [bootc-image-builder](https://osbuild.org/docs/bootc/). In order to use this workflow you must complete the following steps:
 
 1. Modify `disk_config/iso.toml` to point to your custom container image before generating an ISO image.
-2. If you changed your image name from the default in `build.yml` then in the `build-disk.yml` file edit the `IMAGE_REGISTRY`, `IMAGE_NAME` and `DEFAULT_TAG` environment variables with the correct values. If you did not make changes, skip this step.
-3. Finally, if you want to upload your disk images to S3 then you will need to add your S3 configuration to the repository's Action secrets. This can be found by going to your repository settings, under `Secrets and Variables` -> `Actions`. You will need to add the following
-  - `S3_PROVIDER` - Must match one of the values from the [supported list](https://rclone.org/s3/)
-  - `S3_BUCKET_NAME` - Your unique bucket name
-  - `S3_ACCESS_KEY_ID` - It is recommended that you make a separate key just for this workflow
-  - `S3_SECRET_ACCESS_KEY` - See above.
-  - `S3_REGION` - The region your bucket lives in. If you do not know then set this value to `auto`.
-  - `S3_ENDPOINT` - This value will be specific to the bucket as well.
+2. If you change the image name or default tag in `image-template.env`, the workflow picks up the new values automatically. You do not need to edit `build-disk.yml`.
 
-Once the workflow is done, you'll find the disk images either in your S3 bucket or as part of the summary under `Artifacts` after the workflow is completed.
+Run the workflow from the `Actions` tab. It also runs on pull requests that change `disk_config/iso.toml`, `image-template.env`, the `Justfile` or the workflow itself. It takes no inputs. Once the workflow is done, download the ISO from the `Artifacts` section of the workflow run's summary page.
 
 # Artifacthub
 
