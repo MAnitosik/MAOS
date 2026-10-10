@@ -22,10 +22,8 @@ dnf5 -y config-manager addrepo --from-repofile=https://brave-browser-rpm-release
 dnf5 -y install brave-origin
 dnf5 -y install torbrowser-launcher
 
-dnf5 -y copr enable karlisk/ventoy
 dnf5 -y copr enable cubewhy/jetbrains
-dnf5 -y install tealdeer fastfetch micro zed jetbrains-pycharm gh git desktop-plus-bin gnome-boxes lact ventoy obs-studio
-ln -sf /opt/ventoy/Ventoy2Disk.sh /usr/bin/ventoy-cli
+dnf5 -y install tealdeer fastfetch micro zed jetbrains-pycharm gh git desktop-plus-bin gnome-boxes lact obs-studio mediawriter
 
 dnf5 -y install bpftune
 
