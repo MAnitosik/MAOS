@@ -136,18 +136,22 @@ The [build.yml](./.github/workflows/build.yml) Github Actions workflow creates y
 
 # Building Disk Images
 
-This template provides an out of the box workflow for creating an Anaconda ISO installer for your custom OCI image. The ISO can be used to install directly onto your machines. The workflow only builds ISO images. To build QCOW2 or raw images locally, use the `just build-qcow2` and `just build-raw` recipes described below.
+This template builds an Anaconda ISO installer for your image with [image-builder](https://github.com/osbuild/image-builder-cli), using the `bootc-generic-iso` image type. It takes two images:
 
-The workflow uploads the ISO as a workflow artifact named `anaconda-iso`, together with a `SHA256SUMS` file for verifying the download. Artifacts are kept for the retention period set in your repository's settings, which is 90 days by default.
+- The **installer**, `ghcr.io/<owner>/<image>-installer:latest`. [build.yml](./.github/workflows/build.yml) builds it from [installer/](./installer) on every run and publishes it from the default branch. It contains Anaconda and the ISO boot menu.
+- The **payload**, `ghcr.io/<owner>/<image>:latest`, which is your OCI image. The ISO carries a copy of it, so the installation runs offline. The installed system then tracks the registry image for updates.
 
-## Setting Up ISO Builds
+The [build-disk.yml](./.github/workflows/build-disk.yml) workflow builds the ISO. Run it from the `Actions` tab. It also runs on pull requests that change `installer/`, `image-template.env`, the `Justfile` or the workflow itself. The workflow uploads the ISO as the artifact `anaconda-iso`, together with a `SHA256SUMS` file. Artifacts are kept for the repository's artifact retention period, which is 90 days by default.
 
-The [build-disk.yml](./.github/workflows/build-disk.yml) Github Actions workflow creates an ISO from your OCI image by utilizing the [bootc-image-builder](https://osbuild.org/docs/bootc/). In order to use this workflow you must complete the following steps:
+## Customizing the ISO
 
-1. Modify `disk_config/iso.toml` to point to your custom container image before generating an ISO image.
-2. If you change the image name or default tag in `image-template.env`, the workflow picks up the new values automatically. You do not need to edit `build-disk.yml`.
+- `installer/iso.yaml` sets the ISO label and the boot menu entry. The label must match the `LABEL=` value in the boot entry.
+- `installer/anaconda/99-maos.conf` disables the Subscription module and sets the default Btrfs partitioning scheme.
+- `installer/Containerfile` sets the packages in the installer.
 
-Run the workflow from the `Actions` tab. It also runs on pull requests that change `disk_config/iso.toml`, `image-template.env`, the `Justfile` or the workflow itself. It takes no inputs. Once the workflow is done, download the ISO from the `Artifacts` section of the workflow run's summary page.
+The image name and tag come from `image-template.env`. The installer's install source and update origin are generated from them, so forks need no edits.
+
+The local `just build-iso` recipe still uses bootc-image-builder with [disk_config/iso.toml](./disk_config/iso.toml). The CI ISO does not use that file.
 
 # Artifacthub
 

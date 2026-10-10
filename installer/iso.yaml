@@ -1,0 +1,8 @@
+# Read by image-builder for the bootc-generic-iso image type.
+# The label must match the LABEL= value in the kernel command line below.
+label: "MAOS"
+grub2:
+  entries:
+    - name: "Install MAOS"
+      linux: "/images/pxeboot/vmlinuz inst.stage2=hd:LABEL=MAOS console=tty0 inst.graphical selinux=0 rhgb quiet"
+      initrd: "/images/pxeboot/initrd.img"

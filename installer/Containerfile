@@ -1,0 +1,79 @@
+# Installer environment for the ISO. image-builder builds the ISO with the
+# bootc-generic-iso image type (https://osbuild.org/docs/bootc/), following the upstream
+# example in osbuild/image-builder-cli (doc/20-advanced/20-bootc/10-isos.md).
+#
+# This image carries Anaconda and the ISO configuration. The payload, which is the
+# system being installed, is copied into the ISO separately.
+FROM quay.io/fedora/fedora-bootc:44
+
+# Fail on errors inside pipelines, such as the kernel-install | jq step below.
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+# The payload reference that Anaconda installs and tracks for updates. CI passes it in.
+ARG TARGET_IMAGE
+
+# Anaconda installs the payload from the copy stored in the ISO (offline). The update
+# origin is TARGET_IMAGE, which must not have a transport prefix.
+RUN test -n "${TARGET_IMAGE}" && \
+    mkdir -p /usr/share/anaconda && \
+    printf 'bootc --source-imgref containers-storage:%s --target-imgref %s\n' \
+        "${TARGET_IMAGE}" "${TARGET_IMAGE}" \
+        > /usr/share/anaconda/interactive-defaults.ks
+
+# Anaconda, the tools image-builder needs to assemble the ISO, and the boot files.
+# The installer follows the current Fedora 44 packages on purpose, so the versions are not pinned.
+# hadolint ignore=DL3041
+RUN dnf install -y \
+        anaconda \
+        anaconda-dracut \
+        anaconda-install-img-deps \
+        default-fonts-core-sans \
+        default-fonts-other-sans \
+        dracut-config-generic \
+        dracut-network \
+        google-noto-sans-cjk-fonts \
+        grub2-common \
+        grub2-efi-x64 \
+        grub2-efi-x64-cdboot \
+        grub2-pc-modules \
+        grub2-tools \
+        isomd5sum \
+        jq \
+        net-tools \
+        plymouth \
+        podman \
+        python3 \
+        shim-x64 \
+        squashfs-tools \
+        xorriso && \
+    dnf clean all
+
+RUN mkdir -p /boot/efi && cp -ra /usr/lib/efi/*/*/EFI /boot/efi
+
+# Configuration read by image-builder (boot menu) and by Anaconda (modules, storage).
+COPY iso.yaml /usr/lib/image-builder/bootc/iso.yaml
+COPY anaconda/99-maos.conf /etc/anaconda/conf.d/99-maos.conf
+
+# Steps that lorax normally performs to make Anaconda run from a container.
+RUN echo "install:x:0:0:root:/root:/usr/libexec/anaconda/run-anaconda" >> /etc/passwd && \
+    echo "install::14438:0:99999:7:::" >> /etc/shadow && \
+    passwd -d root
+
+RUN mv /usr/share/anaconda/list-harddrives-stub /usr/bin/list-harddrives && \
+    mv /etc/yum.repos.d /etc/anaconda.repos.d && \
+    ln -sf /lib/systemd/system/anaconda.target /etc/systemd/system/default.target && \
+    rm -v /usr/lib/systemd/system-generators/systemd-gpt-auto-generator
+
+RUN ln -sf /usr/lib/systemd/system/anaconda-shell@.service /usr/lib/systemd/system/autovt@.service && \
+    mkdir -p /usr/lib/systemd/logind.conf.d && \
+    printf '[Login]\nReserveVT=2\n' > /usr/lib/systemd/logind.conf.d/anaconda-shell.conf
+
+RUN mkdir -p /etc/systemd/user/pipewire.service.d /etc/systemd/user/pipewire.socket.d && \
+    printf '[Unit]\nConditionUser=\n' > /etc/systemd/user/pipewire.service.d/allowroot.conf && \
+    printf '[Unit]\nConditionUser=\n' > /etc/systemd/user/pipewire.socket.d/allowroot.conf
+
+RUN mkdir -p "$(realpath /root)" && \
+    kernel=$(kernel-install list --json pretty | jq -r '.[] | select(.has_kernel == true) | .version') && \
+    DRACUT_NO_XATTR=1 dracut --force -v --zstd --reproducible --no-hostonly \
+        --add "anaconda" \
+        "/usr/lib/modules/${kernel}/initramfs.img" "${kernel}"
