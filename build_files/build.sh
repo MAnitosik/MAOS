@@ -24,7 +24,8 @@ dnf5 -y install torbrowser-launcher
 
 dnf5 -y copr enable karlisk/ventoy
 dnf5 -y copr enable cubewhy/jetbrains
-dnf5 -y install tealdeer fastfetch micro zed jetbrains-pycharm gh git desktop-plus-bin lact gnome-firmware ventoy obs-studio
+dnf5 -y install tealdeer fastfetch micro zed jetbrains-pycharm gh git desktop-plus-bin gnome-boxes lact ventoy obs-studio
+ln -sf /opt/ventoy/Ventoy2Disk.sh /usr/bin/ventoy-cli
 
 dnf5 -y install bpftune
 
@@ -43,7 +44,7 @@ ln -sf /opt/AmneziaVPN/bin/AmneziaVPN /usr/sbin/AmneziaVPN
 
 dnf5 -y install v2ray-geoip v2ray-domain-list-community xray
 dnf5 -y install v2raya
-wget -O /usr/bin/v2raya_core https://github.com/v2rayA/v2rayA/releases/download/v2.5.9/v2raya_core_linux_x64_2.5.9
+wget -O /usr/bin/v2raya_core https://github.com/v2rayA/v2rayA/releases/download/v2.5.10/v2raya_core_linux_x64_2.5.10
 chmod +x /usr/bin/v2raya_core
 
 dnf5 -y copr enable bieszczaders/kernel-cachyos-lto
@@ -51,6 +52,7 @@ dnf5 -y copr enable bieszczaders/kernel-cachyos-addons
 dnf5 -y swap zram-generator-defaults cachyos-settings
 
 dnf5 -y remove firefox
+dnf5 -y autoremove
 
 systemctl enable podman
 systemctl enable cosmic-greeter
@@ -59,4 +61,4 @@ systemctl enable bpftune
 systemctl enable AmneziaVPN
 systemctl enable v2raya
 
-# zapret2, add proper comments to everything, fix ventoy
+# zapret2, add proper comments to everything

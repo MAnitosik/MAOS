@@ -16,5 +16,3 @@ export DRACUT_NO_XATTR=1
   -f "/usr/lib/modules/$KVER/initramfs.img"
 
 chmod 0600 "/usr/lib/modules/$KVER/initramfs.img"
-
-dnf5 -y autoremove

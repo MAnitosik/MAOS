@@ -12,3 +12,19 @@ tldr --update
 wget -O /etc/hosts https://raw.githubusercontent.com/MAnitosik/MAOS/refs/heads/main/system_files/etc/hosts
 
 wget -O /etc/rpm-ostreed.conf https://raw.githubusercontent.com/MAnitosik/MAOS/refs/heads/main/system_files/etc/rpm-ostreed.conf
+
+flatpak install -y --system --noninteractive flathub org.onlyoffice.desktopeditors
+flatpak install -y --system --noninteractive flathub io.github.wartybix.Constrict
+flatpak install -y --system --noninteractive flathub com.github.huluti.Curtail
+flatpak install -y --system --noninteractive flathub io.gitlab.adhami3310.Converter
+flatpak install -y --system --noninteractive flathub org.gnome.gitlab.YaLTeR.VideoTrimmer
+flatpak install -y --system --noninteractive flathub com.github.PintaProject.Pinta
+
+flatpak install -y --system --noninteractive flathub it.mijorus.gearlever
+flatpak install -y --system --noninteractive flathub com.usebottles.bottles
+flatpak install -y --system --noninteractive flathub org.vinegarhq.Sober
+flatpak install -y --system --noninteractive flathub org.vinegarhq.Vinegar
+flatpak install -y --system --noninteractive https://elyprismlauncher.github.io/flatpak/elyprismlauncher.flatpakref
+
+flatpak install -y --system --noninteractive flathub org.telegram.desktop
+flatpak install -y --system --noninteractive flathub chat.delta.desktop

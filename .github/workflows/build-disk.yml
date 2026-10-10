@@ -4,82 +4,93 @@ name: Build disk images
 on:
   workflow_dispatch:
     inputs:
-      upload-to-storage:
-        description: "Upload the compressed ISO to storage.to instead of keeping it as a job artifact"
+      upload-to-s3:
+        description: "Upload to S3"
         required: false
         default: false
         type: boolean
+      platform:
+        required: true
+        type: choice
+        options:
+          - amd64
+          - arm64
   pull_request:
     branches:
       - main
     paths:
-      - disk_config/iso.toml
-      - .github/workflows/build-disk.yml
-
-permissions: {}
+      - './disk_config/disk.toml'
+      - './disk_config/iso.toml'
+      - './.github/workflows/build-disk.yml'
 
 env:
   IMAGE_NAME: ${{ github.event.repository.name }} # output of build.yml, keep in sync
-  IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}" # do not edit
+  IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"  # do not edit
   DEFAULT_TAG: "latest"
   BIB_IMAGE: "quay.io/centos-bootc/bootc-image-builder:latest"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
-  # Superseded pull request builds are cancelled; manual builds run to completion so uploads are not cut off.
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: true
 
 jobs:
   build:
-    name: Build disk image
-    # 24.04 is the runner the builder action's own anaconda-iso CI uses. On 26.04 (podman 5.7, kernel 7.0),
-    # osbuild's build sandbox was denied chown and mount calls during the RPM stage.
-    runs-on: ubuntu-24.04
-    # The build and artifact upload measured ~16 min. zstd -19 and the storage.to upload add unmeasured time on top.
-    timeout-minutes: 90
-
+    name: Build disk images
+    runs-on: ${{ inputs.platform == 'amd64' && 'ubuntu-26.04' || 'ubuntu-26.04-arm' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        disk-type: ["qcow2", "anaconda-iso"]
     permissions:
       contents: read
       packages: read
+      id-token: write
 
     steps:
       - name: Prepare environment
         run: |
-          set -Eeuo pipefail
-          # OCI references must be lowercase.
-          {
-            echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}"
-            echo "IMAGE_NAME=${IMAGE_NAME,,}"
-            echo "USER_UID=$(id -u)"
-            echo "USER_GID=$(id -g)"
-          } >> "$GITHUB_ENV"
+          USER_UID=$(id -u)
+          USER_GID=$(id -g)
+          # Concatenate the types with a hyphen
+          DISK_TYPE=$(echo "${{ matrix.disk-type }}" | tr ' ' '-')
+          # Lowercase the image uri
+          echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
+          echo "IMAGE_NAME=${IMAGE_NAME,,}" >> ${GITHUB_ENV}
+          echo "DISK_TYPE=${DISK_TYPE}" >> ${GITHUB_ENV}
+          echo "USER_UID=${USER_UID}" >> ${GITHUB_ENV}
+          echo "USER_GID=${USER_GID}" >> ${GITHUB_ENV}
 
-      # Pinned to main (the v10 rewrite). The v9 tag runs `apt-get remove powershell`, which fails on ubuntu-26.04
-      # with "Unable to locate package". v10 does no apt removals and keeps the container tooling BIB needs.
+      - name: Install dependencies
+        if: inputs.platform == 'arm64'
+        run: |
+          set -x
+          sudo apt update -y
+          sudo apt install -y \
+            podman
+
       - name: Maximize build space
-        uses: ublue-os/remove-unwanted-software@695eb75bc387dbcd9685a8e72d23439d8686cba6 # main (v10)
+        if: inputs.platform != 'arm64'
+        uses: ublue-os/remove-unwanted-software@695eb75bc387dbcd9685a8e72d23439d8686cba6
+        with:
+          remove-codeql: true
 
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Build disk image
+      - name: Build disk images
         id: build
-        uses: osbuild/bootc-image-builder-action@028e4d28330efe546229eb9cb52aee78174d2347 # main
+        uses: osbuild/bootc-image-builder-action@8661cd3832544ad68c12dcde8681b13ab0f56a8d # main
         with:
           builder-image: ${{ env.BIB_IMAGE }}
-          config-file: ./disk_config/iso.toml
+          config-file: ${{ matrix.disk-type == 'anaconda-iso' && './disk_config/iso.toml' || './disk_config/disk.toml' }}
           image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
           chown: ${{ env.USER_UID }}:${{ env.USER_GID }}
-          types: anaconda-iso
-          # Required: the image declares no default root filesystem. Matches the Justfile's _build-bib (--rootfs=btrfs).
-          rootfs: btrfs
+          types: ${{ matrix.disk-type }}
           additional-args: --use-librepo=True
 
-      - name: Upload to job artifacts
-        if: inputs.upload-to-storage != true && github.event_name != 'pull_request'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      - name: Upload disk images and Checksum to Job Artifacts
+        if: inputs.upload-to-s3 != true && github.event_name != 'pull_request'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           path: ${{ steps.build.outputs.output-directory }}
           if-no-files-found: error
@@ -87,131 +98,18 @@ jobs:
           compression-level: 0
           overwrite: true
 
-      - name: Install storage.to tools
-        if: inputs.upload-to-storage == true && github.event_name != 'pull_request'
-        run: |
-          set -Eeuo pipefail
-          missing=()
-          for tool in jq zstd; do
-            command -v "$tool" > /dev/null || missing+=("$tool")
-          done
-          if (( ${#missing[@]} > 0 )); then
-            sudo apt-get update
-            sudo apt-get install -y --no-install-recommends "${missing[@]}"
-          fi
-
-      - name: Compress ISO
-        id: compress
-        if: inputs.upload-to-storage == true && github.event_name != 'pull_request'
+      - name: Upload to S3
+        if: inputs.upload-to-s3 == true && github.event_name != 'pull_request'
+        shell: bash
         env:
-          OUTPUT_DIR: ${{ steps.build.outputs.output-directory }}
+          RCLONE_CONFIG_S3_TYPE: s3
+          RCLONE_CONFIG_S3_PROVIDER: ${{ secrets.S3_PROVIDER }}
+          RCLONE_CONFIG_S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+          RCLONE_CONFIG_S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+          RCLONE_CONFIG_S3_REGION: ${{ secrets.S3_REGION }}
+          RCLONE_CONFIG_S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
+          SOURCE_DIR: ${{ steps.build.outputs.output-directory }}
         run: |
-          set -Eeuo pipefail
-          iso="$(find "$OUTPUT_DIR" -type f -name '*.iso' -print -quit)"
-          if [[ -z "$iso" ]]; then
-            echo "::error::No ISO found in $OUTPUT_DIR"
-            exit 1
-          fi
-          mkdir -p release
-          out="release/${IMAGE_NAME}.iso.zst"
-          zstd -19 -T0 "$iso" -o "$out"
-          echo "file=$out" >> "$GITHUB_OUTPUT"
-
-      - name: Upload to storage.to
-        id: upload
-        if: inputs.upload-to-storage == true && github.event_name != 'pull_request'
-        env:
-          FILE: ${{ steps.compress.outputs.file }}
-        run: |
-          set -Eeuo pipefail
-
-          api="https://storage.to/api/upload"
-          name="$(basename "$FILE")"
-          size="$(stat -c%s "$FILE")"
-          visitor_token="$(cat /proc/sys/kernel/random/uuid)"
-          tmp="$(mktemp -d)"
-          trap 'rm -rf "$tmp"' EXIT
-
-          # Build request bodies with jq so every value is escaped correctly.
-          init_body="$(jq -nc --arg filename "$name" --arg content_type application/zstd --argjson size "$size" \
-            '{filename: $filename, content_type: $content_type, size: $size}')"
-
-          init="$(curl -fsSL -X POST "$api/init" \
-            -H "Content-Type: application/json" \
-            -H "X-Visitor-Token: $visitor_token" \
-            -d "$init_body")"
-
-          upload_type="$(jq -r '.type' <<< "$init")"
-          r2_key="$(jq -r '.r2_key' <<< "$init")"
-
-          case "$upload_type" in
-            single)
-              upload_url="$(jq -r '.upload_url' <<< "$init")"
-              curl --fail --silent --show-error --retry 10 --retry-all-errors --retry-delay 5 \
-                --upload-file "$FILE" "$upload_url"
-              ;;
-
-            multipart)
-              upload_id="$(jq -r '.upload_id' <<< "$init")"
-              part_size="$(jq -r '.part_size' <<< "$init")"
-              total_parts="$(jq -r '.total_parts' <<< "$init")"
-              part="$tmp/part"
-              headers="$tmp/headers"
-              etags="$tmp/etags.jsonl"
-
-              echo "Multipart upload: $total_parts parts of $part_size bytes"
-              for ((i = 1; i <= total_parts; i++)); do
-                echo "Uploading part $i/$total_parts"
-
-                url="$(jq -r --arg n "$i" '.initial_urls[$n] // empty' <<< "$init")"
-                if [[ -z "$url" ]]; then
-                  url="$(curl -fsSL -X POST "$api/parts" \
-                    -H "Content-Type: application/json" \
-                    -d "$(jq -nc --arg id "$upload_id" --argjson n "$i" '{upload_id: $id, part_numbers: [$n]}')" \
-                    | jq -r '.part_urls[0].url')"
-                fi
-
-                # Copy only this slice of the ISO rather than splitting the whole file onto disk first.
-                dd if="$FILE" of="$part" bs=8M iflag=skip_bytes,count_bytes status=none \
-                  skip="$(( (i - 1) * part_size ))" count="$part_size"
-
-                curl --fail --silent --show-error --retry 10 --retry-all-errors --retry-delay 5 \
-                  -D "$headers" --upload-file "$part" "$url"
-
-                etag="$(tr -d '\r"' < "$headers" | awk -F': ' 'tolower($1) == "etag" { value = $2 } END { print value }')"
-                if [[ -z "$etag" ]]; then
-                  echo "::error::No ETag returned for part $i"
-                  exit 1
-                fi
-                jq -nc --argjson n "$i" --arg etag "$etag" '{partNumber: $n, etag: $etag}' >> "$etags"
-              done
-
-              curl -fsSL -X POST "$api/complete-multipart" \
-                -H "Content-Type: application/json" \
-                -d "$(jq -nc --arg id "$upload_id" --slurpfile parts "$etags" '{upload_id: $id, parts: $parts}')" \
-                > /dev/null
-              ;;
-
-            *)
-              echo "::error::Unknown upload type: $upload_type"
-              exit 1
-              ;;
-          esac
-
-          confirm_body="$(jq -nc --arg filename "$name" --arg content_type application/zstd \
-            --argjson size "$size" --arg r2_key "$r2_key" \
-            '{filename: $filename, content_type: $content_type, size: $size, r2_key: $r2_key}')"
-
-          confirm="$(curl -fsSL -X POST "$api/confirm" \
-            -H "Content-Type: application/json" \
-            -H "X-Visitor-Token: $visitor_token" \
-            -d "$confirm_body")"
-
-          url="$(jq -r '.file.url // empty' <<< "$confirm")"
-          if [[ -z "$url" ]]; then
-            echo "::error::Confirm response did not include a download URL"
-            exit 1
-          fi
-
-          echo "Download URL: $url"
-          echo "url=$url" >> "$GITHUB_OUTPUT"
+          sudo apt-get update
+          sudo apt-get install -y rclone
+          rclone copy $SOURCE_DIR S3:${{ secrets.S3_BUCKET_NAME }}
