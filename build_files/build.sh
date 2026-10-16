@@ -62,4 +62,4 @@ systemctl enable lactd
 systemctl enable AmneziaVPN
 systemctl enable v2raya
 
-# add zapret2, add proper comments to everything
+# add zapret2, add proper comments to everything, replace gnome-boxes with virt-manager (?)
